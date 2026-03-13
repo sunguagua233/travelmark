@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker as LeafletMarker, Popup, useMap, Polyline, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { api } from '../services/api';
+import { api } from '../services/db';
 import { Itinerary, Marker, POI } from '../types';
 import { ArrowLeft, Search, Plus, MapPin, Navigation, Star, Image as ImageIcon, X, Save, Trash2, Layers, ExternalLink, List as ListIcon, GripVertical, Maximize, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';

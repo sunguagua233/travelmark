@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
+import { api } from '../services/db';
 import { Group, Itinerary } from '../types';
 import { Plus, Folder, Map as MapIcon, ChevronRight, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
