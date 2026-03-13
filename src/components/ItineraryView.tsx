@@ -5,10 +5,11 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { api } from '../services/db';
 import { Itinerary, Marker, POI } from '../types';
-import { ArrowLeft, Search, Plus, MapPin, Navigation, Star, Image as ImageIcon, X, Save, Trash2, Layers, ExternalLink, List as ListIcon, GripVertical, Maximize, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Search, Plus, MapPin, Navigation, Star, Image as ImageIcon, X, Save, Trash2, Layers, ExternalLink, List as ListIcon, GripVertical, Maximize, MoreVertical, Download, FileText, Image } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { exportAsJSON, exportItineraryList, exportMapPreview } from '../utils/export';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -90,10 +91,16 @@ export default function ItineraryView() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     if (id) loadItinerary();
   }, [id]);
+
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  };
 
   const loadItinerary = async () => {
     const data = await api.itineraries.get(Number(id));
@@ -227,6 +234,39 @@ export default function ItineraryView() {
     setIsMenuOpen(false);
   };
 
+  // 导出为 JSON
+  const handleExportJSON = async () => {
+    try {
+      const data = await api.export.itinerary(Number(id));
+      exportAsJSON(data, `${itinerary?.name || '行程'}.json`);
+      showMessage('success', '导出成功！');
+    } catch (error) {
+      showMessage('error', '导出失败');
+    }
+    setIsMenuOpen(false);
+  };
+
+  // 导出行程列表 HTML
+  const handleExportList = () => {
+    if (itinerary) {
+      exportItineraryList(itinerary);
+      showMessage('success', '行程列表已导出！');
+    }
+    setIsMenuOpen(false);
+  };
+
+  // 导出地图预览图片
+  const handleExportMapImage = async () => {
+    try {
+      const markers = itinerary?.markers || [];
+      await exportMapPreview(markers);
+      showMessage('success', '地图预览已导出！');
+    } catch (error) {
+      showMessage('error', '导出失败');
+    }
+    setIsMenuOpen(false);
+  };
+
   const itineraryMarkers = itinerary?.markers?.filter(m => m.type === 'itinerary') || [];
   const favoriteMarkers = itinerary?.markers?.filter(m => m.type === 'favorite') || [];
   const routePoints = itineraryMarkers.map(m => [m.lat, m.lng] as [number, number]);
@@ -272,14 +312,14 @@ export default function ItineraryView() {
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                 className="absolute top-full right-0 mt-2 flex flex-col gap-2 z-[1001]"
               >
-                <button 
+                <button
                   onClick={handleFitBounds}
                   className="p-3 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg hover:bg-primary hover:text-white transition-all text-gray-700 flex items-center justify-center"
                   title="缩放至全览"
                 >
                   <Maximize size={20} />
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setShowRoute(!showRoute);
                     setIsMenuOpen(false);
@@ -292,7 +332,7 @@ export default function ItineraryView() {
                 >
                   <Layers size={20} />
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setIsListOpen(!isListOpen);
                     setIsMenuOpen(false);
@@ -304,6 +344,34 @@ export default function ItineraryView() {
                   title="行程列表"
                 >
                   <ListIcon size={20} />
+                </button>
+
+                {/* 导出选项分隔线 */}
+                <div className="h-px bg-gray-200 my-1"></div>
+
+                <button
+                  onClick={handleExportJSON}
+                  className="p-3 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg hover:bg-primary hover:text-white transition-all text-gray-700 flex items-center justify-center gap-2"
+                  title="导出 JSON"
+                >
+                  <Download size={18} />
+                  <span className="text-sm font-medium">导出</span>
+                </button>
+                <button
+                  onClick={handleExportList}
+                  className="p-3 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg hover:bg-primary hover:text-white transition-all text-gray-700 flex items-center justify-center gap-2"
+                  title="导出行程列表"
+                >
+                  <FileText size={18} />
+                  <span className="text-sm font-medium">列表</span>
+                </button>
+                <button
+                  onClick={handleExportMapImage}
+                  className="p-3 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg hover:bg-primary hover:text-white transition-all text-gray-700 flex items-center justify-center gap-2"
+                  title="导出地图图片"
+                >
+                  <Image size={18} />
+                  <span className="text-sm font-medium">地图图</span>
                 </button>
               </motion.div>
             )}
@@ -748,6 +816,22 @@ export default function ItineraryView() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Message Toast */}
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className={`fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-2xl z-50 ${
+              message.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`}
+          >
+            {message.text}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

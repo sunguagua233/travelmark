@@ -274,6 +274,131 @@ class Database {
       });
     }
   }
+
+  /**
+   * 导出所有数据为 JSON
+   */
+  async exportAllData(): Promise<ExportData> {
+    const groups = await this.getAll<Group>(STORES.GROUPS);
+    const itineraries = await this.getAll<Itinerary>(STORES.ITINERARIES);
+    const markers = await this.getAll<Marker>(STORES.MARKERS);
+    const attachments = await this.getAll<Attachment>(STORES.ATTACHMENTS);
+
+    return {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      data: {
+        groups,
+        itineraries,
+        markers,
+        attachments
+      }
+    };
+  }
+
+  /**
+   * 导出单个行程数据
+   */
+  async exportItinerary(itineraryId: number): Promise<ItineraryExportData> {
+    const itinerary = await this.get<Itinerary>(STORES.ITINERARIES, itineraryId);
+    if (!itinerary) throw new Error('Itinerary not found');
+
+    const markers = await this.getAll<Marker>(STORES.MARKERS);
+    const itineraryMarkers = markers.filter(m => m.itinerary_id === itineraryId);
+
+    const allAttachments = await this.getAll<Attachment>(STORES.ATTACHMENTS);
+    const markersWithAttachments = itineraryMarkers.map(m => ({
+      ...m,
+      attachments: allAttachments.filter(a => a.marker_id === m.id)
+    }));
+
+    return {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      data: {
+        itinerary: {
+          ...itinerary,
+          markers: markersWithAttachments
+        }
+      }
+    };
+  }
+
+  /**
+   * 导入行程数据
+   */
+  async importItinerary(data: ItineraryExportData['data']['itinerary'], merge: boolean = false): Promise<number> {
+    // 如果不是合并模式，先删除同名的行程
+    if (!merge) {
+      const existingItineraries = await this.getAll<Itinerary>(STORES.ITINERARIES);
+      const duplicate = existingItineraries.find(i => i.name === data.name && i.group_id === data.group_id);
+      if (duplicate) {
+        // 删除旧行程及其标记
+        await this.deleteItinerary(duplicate.id);
+      }
+    }
+
+    // 创建新行程（ID 会重新生成）
+    const newItinerary: Omit<Itinerary, 'id'> = {
+      name: data.name,
+      group_id: data.group_id,
+      description: data.description,
+      created_at: new Date().toISOString()
+    };
+    const newItineraryId = await this.add(STORES.ITINERARIES, newItinerary);
+
+    // 导入标记点
+    if (data.markers && data.markers.length > 0) {
+      for (const marker of data.markers) {
+        const newMarker: Omit<Marker, 'id' | 'created_at' | 'itinerary_id'> = {
+          itinerary_id: newItineraryId,
+          name: marker.name,
+          address: marker.address,
+          lat: marker.lat,
+          lng: marker.lng,
+          type: marker.type,
+          category: marker.category,
+          style: marker.style,
+          notes: marker.notes,
+          order_index: marker.order_index
+        };
+        const newMarkerId = await this.add(STORES.MARKERS, {
+          ...newMarker,
+          created_at: new Date().toISOString()
+        });
+
+        // 导入附件
+        if (marker.attachments && marker.attachments.length > 0) {
+          for (const att of marker.attachments) {
+            await this.add(STORES.ATTACHMENTS, {
+              marker_id: newMarkerId,
+              url: att.url
+            });
+          }
+        }
+      }
+    }
+
+    return newItineraryId;
+  }
+
+  /**
+   * 删除行程及其相关数据
+   */
+  async deleteItinerary(itineraryId: number): Promise<void> {
+    // 删除行程的标记点
+    const markers = await this.getAll<Marker>(STORES.MARKERS);
+    for (const m of markers.filter(m => m.itinerary_id === itineraryId)) {
+      // 删除标记的附件
+      const attachments = await this.getAll<Attachment>(STORES.ATTACHMENTS);
+      for (const att of attachments.filter(a => a.marker_id === m.id)) {
+        await this.delete(STORES.ATTACHMENTS, att.id);
+      }
+      await this.delete(STORES.MARKERS, m.id);
+    }
+    // 删除行程
+    await this.delete(STORES.ITINERARIES, itineraryId);
+  }
 }
 
 // 创建单例实例
@@ -316,6 +441,11 @@ export const api = {
     create: async (name: string, group_id: number | null) => {
       await ensureDbInitialized();
       return db.createItinerary(name, group_id);
+    },
+    delete: async (id: number) => {
+      await ensureDbInitialized();
+      await db.deleteItinerary(id);
+      return { success: true };
     }
   },
 
@@ -339,6 +469,24 @@ export const api = {
       await ensureDbInitialized();
       await db.bulkUpdateMarkers(markers);
       return { success: true };
+    }
+  },
+
+  export: {
+    all: async () => {
+      await ensureDbInitialized();
+      return db.exportAllData();
+    },
+    itinerary: async (id: number) => {
+      await ensureDbInitialized();
+      return db.exportItinerary(id);
+    }
+  },
+
+  import: {
+    itinerary: async (data: ItineraryExportData['data']['itinerary'], merge?: boolean) => {
+      await ensureDbInitialized();
+      return db.importItinerary(data, merge);
     }
   }
 };
@@ -388,6 +536,26 @@ export interface POI {
   address: string;
   lat: number;
   lng: number;
+}
+
+// 导出/导入类型定义
+export interface ExportData {
+  version: string;
+  exportDate: string;
+  data: {
+    groups: Group[];
+    itineraries: Itinerary[];
+    markers: Marker[];
+    attachments: Attachment[];
+  };
+}
+
+export interface ItineraryExportData {
+  version: string;
+  exportDate: string;
+  data: {
+    itinerary: Itinerary & { markers: (Marker & { attachments?: Attachment[] })[] };
+  };
 }
 
 export default db;
