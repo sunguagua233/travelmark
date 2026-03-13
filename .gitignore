@@ -1,0 +1,22 @@
+node_modules/
+dist/
+build/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database (now using IndexedDB in browser)
+*.db
+*.db-shm
+*.db-wal
+
+# Server files (no longer needed)
+server.ts
