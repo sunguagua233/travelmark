@@ -8,7 +8,7 @@ export default defineConfig({
   // GitHub Pages 部署路径配置
   // 如果仓库名为 'routeplanner'，则路径为 '/routeplanner/'
   // 如果使用自定义域名或根目录部署，则改为 '/'
-  base: process.env.NODE_ENV === 'production' ? '/routeplanner/' : '/',
+  base: process.env.NODE_ENV === 'production' ? '/travelmark/' : '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
