@@ -85,6 +85,7 @@ export default function ItineraryView() {
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
   const [editingMarker, setEditingMarker] = useState<Partial<Marker> | null>(null);
   const [viewingMarker, setViewingMarker] = useState<Marker | null>(null);
+  const [currentMarker, setCurrentMarker] = useState<Marker | null>(null); // 原始标记，用于类型切换比较
   const [showRoute, setShowRoute] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -144,13 +145,40 @@ export default function ItineraryView() {
       order_index: (itinerary?.markers?.length || 0) + 1,
       attachments: []
     });
+    setCurrentMarker(null); // 新建标记，没有原始标记
     setIsEditorOpen(true);
     setIsDrawerOpen(false);
   };
 
   const handleSaveMarker = async () => {
     if (!editingMarker) return;
-    
+
+    // 获取当前标记的类型和排序（从状态中获取）
+    const originalMarker = currentMarker || itinerary?.markers?.find(m => m.id === editingMarker.id);
+    const currentType = originalMarker?.type;
+    const currentOrderIndex = originalMarker?.order_index || 0;
+    const newType = editingMarker.type;
+
+    // 如果类型发生变化，需要处理排序
+    if (currentType && currentType !== newType) {
+      const itineraryMarkers = itinerary?.markers?.filter(m => m.type === 'itinerary') || [];
+
+      if (currentType === 'itinerary' && newType === 'favorite') {
+        // 行程标记改为收藏标记：后续行程标记排序-1
+        const markersToUpdate = itineraryMarkers
+          .filter(m => m.id !== editingMarker.id && m.order_index && m.order_index > currentOrderIndex)
+          .map(m => ({ id: m.id, order_index: m.order_index! - 1 }));
+
+        if (markersToUpdate.length > 0) {
+          await api.markers.bulkUpdate(markersToUpdate);
+        }
+      } else if (currentType === 'favorite' && newType === 'itinerary') {
+        // 收藏标记改为行程标记：设置为当前最大排序+1
+        const maxOrderIndex = Math.max(0, ...itineraryMarkers.map(m => m.order_index || 0));
+        editingMarker.order_index = maxOrderIndex + 1;
+      }
+    }
+
     // Prepare data for API
     const markerData = {
       ...editingMarker,
@@ -164,6 +192,7 @@ export default function ItineraryView() {
     }
     setIsEditorOpen(false);
     setEditingMarker(null);
+    setCurrentMarker(null);
     loadItinerary();
   };
 
@@ -202,6 +231,7 @@ export default function ItineraryView() {
     setIsEditorOpen(false);
     setIsDetailOpen(false);
     setEditingMarker(null);
+    setCurrentMarker(null);
     setViewingMarker(null);
   };
 
@@ -667,9 +697,10 @@ export default function ItineraryView() {
                 >
                   <Trash2 size={24} />
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setEditingMarker(viewingMarker);
+                    setCurrentMarker(viewingMarker); // 保存原始标记用于比较
                     setIsDetailOpen(false);
                     setIsEditorOpen(true);
                   }}
@@ -702,7 +733,7 @@ export default function ItineraryView() {
             >
               <div className="p-8 pb-4 flex items-center justify-between border-b border-gray-100">
                 <h3 className="text-2xl font-bold text-gray-900">编辑标记点</h3>
-                <button onClick={() => setIsEditorOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={24} /></button>
+                <button onClick={() => { setIsEditorOpen(false); setCurrentMarker(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={24} /></button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-8 space-y-8">
@@ -769,6 +800,33 @@ export default function ItineraryView() {
                     )}
                   </div>
                 </div>
+
+                {/* 类型切换提示 */}
+                {currentMarker && currentMarker.type !== editingMarker.type && (
+                  <div className={`p-4 rounded-2xl text-sm ${
+                    editingMarker.type === 'favorite'
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                      : 'bg-blue-50 text-blue-700 border border-blue-200'
+                  }`}>
+                    {editingMarker.type === 'favorite' ? (
+                      <div className="flex items-start gap-2">
+                        <span className="text-lg">ℹ️</span>
+                        <div>
+                          <p className="font-bold">切换为收藏标记</p>
+                          <p className="text-xs mt-1 opacity-80">该标记将不再参与路线绘制，后续行程标记的序号将自动减1</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <span className="text-lg">ℹ️</span>
+                        <div>
+                          <p className="font-bold">切换为行程标记</p>
+                          <p className="text-xs mt-1 opacity-80">该标记将参与路线绘制，序号将自动设置为当前最大+1</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="text-[11px] uppercase font-bold tracking-widest text-gray-400">备注信息</label>
