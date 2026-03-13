@@ -15,8 +15,10 @@ function AppContent() {
 }
 
 export default function App() {
+  // GitHub Pages 部署在 /travelmark/ 子路径下
+  const basename = import.meta.env.MODE === 'production' ? '/travelmark' : '/';
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <AppContent />
     </BrowserRouter>
   );
