@@ -1,0 +1,5 @@
+{
+  "name": "RoutePlanner - 智能行程规划",
+  "description": "一个功能强大的行程路线规划应用，支持地点搜索、路线规划、收藏夹管理及图片附件。",
+  "requestFramePermissions": ["geolocation"]
+}

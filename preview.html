@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoutePlanner - 智能行程规划助手</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3B59F8;
+            --primary-dark: #2D47CC;
+            --accent: #FF6B9D;
+            --bg: #F8F9FF;
+            --surface: #FFFFFF;
+            --text: #141414;
+            --text-secondary: #666666;
+            --border: #E8E8F0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        .nav-logo .icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(59, 89, 248, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 160px 40px 100px;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .hero-content {
+            max-width: 560px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(59, 89, 248, 0.1), rgba(255, 107, 157, 0.1));
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 24px;
+            border: 1px solid rgba(59, 89, 248, 0.2);
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 32px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 16px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 8px 24px rgba(59, 89, 248, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(59, 89, 248, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text);
+            padding: 16px 32px;
+            border-radius: 16px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Hero Phone Mockup */
+        .hero-mockup {
+            position: relative;
+        }
+
+        .phone-frame {
+            width: 320px;
+            height: 640px;
+            background: #1a1a1a;
+            border-radius: 48px;
+            padding: 12px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.2);
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .phone-frame::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 28px;
+            background: #1a1a1a;
+            border-radius: 20px;
+            z-index: 10;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Simulated App UI */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #6B8BFF 100%);
+            padding: 60px 20px 40px;
+            color: white;
+        }
+
+        .app-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .app-header p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .app-body {
+            padding: 20px;
+            margin-top: -20px;
+        }
+
+        .app-card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            margin-bottom: 12px;
+        }
+
+        .app-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .app-card-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .app-card-header .add-btn {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .itinerary-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 16px;
+            margin-bottom: 8px;
+        }
+
+        .itinerary-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .itinerary-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .itinerary-info p {
+            font-size: 10px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(59, 89, 248, 0.1), rgba(255, 107, 157, 0.1));
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .section-header h2 {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Screenshot Section */
+        .screenshots {
+            padding: 100px 40px;
+            background: white;
+        }
+
+        .screenshots-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 60px;
+        }
+
+        .screenshot-card {
+            background: var(--bg);
+            border-radius: 24px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .screenshot-mockup {
+            background: #1a1a1a;
+            border-radius: 20px;
+            padding: 8px;
+            margin-bottom: 16px;
+        }
+
+        .screenshot-inner {
+            background: white;
+            border-radius: 16px;
+            aspect-ratio: 9/16;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .screenshot-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .screenshot-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Tech Stack */
+        .tech-stack {
+            padding: 100px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .tech-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 40px;
+        }
+
+        .tech-item {
+            background: white;
+            padding: 16px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: var(--primary);
+            border: 2px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .tech-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 24px rgba(59, 89, 248, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 100px 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            text-align: center;
+            color: white;
+        }
+
+        .cta-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .cta h2 {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .cta p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 32px;
+        }
+
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            color: var(--primary);
+            padding: 18px 40px;
+            border-radius: 16px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 18px;
+            transition: all 0.3s;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 40px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding-top: 200px;
+            }
+
+            .hero-content {
+                margin: 0 auto;
+            }
+
+            .hero-actions {
+                justify-content: center;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .screenshots-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .features-grid,
+            .screenshots-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .phone-frame {
+                width: 280px;
+                height: 560px;
+            }
+        }
+
+        /* Floating decoration */
+        .float-decoration {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .float-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            top: 10%;
+            right: -10%;
+        }
+
+        .float-2 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent);
+            bottom: 20%;
+            left: -5%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Decorations -->
+    <div class="float-decoration float-1"></div>
+    <div class="float-decoration float-2"></div>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-logo">
+            <div class="icon">R</div>
+            RoutePlanner
+        </div>
+        <div class="nav-links">
+            <a href="#features">功能特性</a>
+            <a href="#screenshots">界面预览</a>
+            <a href="#tech">技术栈</a>
+        </div>
+        <a href="." class="nav-btn">启动应用</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <span class="hero-badge">
+                <span>1.0.0</span> 全新发布
+            </span>
+            <h1>智能行程规划<br>让旅行井井有条</h1>
+            <p>搜索全球地点、规划旅行路线、管理收藏标记、添加图片备注。RoutePlanner 是您贴心的旅行规划助手。</p>
+            <div class="hero-actions">
+                <a href="." class="btn-primary">
+                    开始使用 →
+                </a>
+                <a href="#features" class="btn-secondary">
+                    了解更多
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-mockup">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="app-header">
+                        <h2>欢迎使用行程助手</h2>
+                        <p>规划您的下一次完美旅程</p>
+                    </div>
+                    <div class="app-body">
+                        <div class="app-card">
+                            <div class="app-card-header">
+                                <h3>我的行程</h3>
+                                <div class="add-btn">+</div>
+                            </div>
+                            <div class="itinerary-item">
+                                <div class="itinerary-icon">📍</div>
+                                <div class="itinerary-info">
+                                    <h4>北京三日游</h4>
+                                    <p>3 个地点 · 创建于 3月10日</p>
+                                </div>
+                            </div>
+                            <div class="itinerary-item">
+                                <div class="itinerary-icon">📍</div>
+                                <div class="itinerary-info">
+                                    <h4>上海美食探店</h4>
+                                    <p>5 个地点 · 创建于 3月8日</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="app-card">
+                            <div class="app-card-header">
+                                <h3>收藏夹</h3>
+                                <div class="add-btn">+</div>
+                            </div>
+                            <div class="itinerary-item">
+                                <div class="itinerary-icon">⭐</div>
+                                <div class="itinerary-info">
+                                    <h4>必打卡景点</h4>
+                                    <p>12 个地点</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="section-header">
+            <span class="section-tag">功能特性</span>
+            <h2>强大的旅行规划工具</h2>
+            <p>从地点搜索到路线规划，从收藏管理到图片备注，满足您的所有旅行规划需求</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>全球地点搜索</h3>
+                <p>基于 OpenStreetMap 数据库，支持全球地点搜索。无论国内外，输入名称即可快速定位。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📍</div>
+                <h3>智能路线规划</h3>
+                <p>在地图上标记行程点，自动生成路线连线。支持拖拽调整顺序，一键查看全览。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⭐</div>
+                <h3>收藏标记管理</h3>
+                <p>将心仪的地点保存为收藏标记，支持自定义图标和分类分组，打造个人专属收藏夹。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🖼️</div>
+                <h3>图片附件支持</h3>
+                <p>为每个地点添加图片附件，支持本地图片上传。记录旅行中的美好瞬间，直观查看。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>详细备注信息</h3>
+                <p>添加文字备注，支持小红书链接自动识别。整合攻略信息，出行参考更方便。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📂</div>
+                <h3>分组归类管理</h3>
+                <p>创建行程分组，按旅行计划或主题归类。多个行程项目也能清晰有序地管理。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section id="screenshots" class="screenshots">
+        <div class="screenshots-container">
+            <div class="section-header">
+                <span class="section-tag">界面预览</span>
+                <h2>简洁优雅的界面设计</h2>
+                <p>精心设计的用户界面，带来流畅自然的使用体验</p>
+            </div>
+
+            <div class="screenshots-grid">
+                <div class="screenshot-card">
+                    <div class="screenshot-mockup">
+                        <div class="screenshot-inner">🏠</div>
+                    </div>
+                    <h4>首页管理</h4>
+                    <p>查看所有行程和分组</p>
+                </div>
+                <div class="screenshot-card">
+                    <div class="screenshot-mockup">
+                        <div class="screenshot-inner">🗺️</div>
+                    </div>
+                    <h4>地图规划</h4>
+                    <p>在地图上标记和连线</p>
+                </div>
+                <div class="screenshot-card">
+                    <div class="screenshot-mockup">
+                        <div class="screenshot-inner">📝</div>
+                    </div>
+                    <h4>详情编辑</h4>
+                    <p>添加备注和图片附件</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section id="tech" class="tech-stack">
+        <div class="section-header">
+            <span class="section-tag">技术栈</span>
+            <h2>现代化技术构建</h2>
+            <p>采用最新的前端技术栈，确保应用性能和开发体验</p>
+        </div>
+
+        <div class="tech-grid">
+            <span class="tech-item">React 19</span>
+            <span class="tech-item">TypeScript</span>
+            <span class="tech-item">Vite</span>
+            <span class="tech-item">Tailwind CSS</span>
+            <span class="tech-item">Leaflet</span>
+            <span class="tech-item">React Router</span>
+            <span class="tech-item">Motion</span>
+            <span class="tech-item">Express</span>
+            <span class="tech-item">SQLite</span>
+            <span class="tech-item">Lucide Icons</span>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="cta-content">
+            <h2>开始规划您的下一次旅程</h2>
+            <p>立即使用 RoutePlanner，让旅行规划变得简单高效</p>
+            <a href="." class="cta-btn">
+                ▶ 启动应用
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>RoutePlanner - 智能行程规划助手 · 基于 React + TypeScript 构建</p>
+    </footer>
+
+    <script>
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Add scroll animation for elements
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.feature-card, .screenshot-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
