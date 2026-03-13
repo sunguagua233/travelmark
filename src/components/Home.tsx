@@ -103,60 +103,62 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-20 font-sans">
-      <div className="bg-primary h-64 rounded-b-[60px] p-8 pt-16 relative overflow-hidden">
+      <div className="bg-primary h-64 rounded-b-[60px] p-6 pt-12 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/20 rounded-full -ml-10 -mb-10 blur-2xl" />
 
-        <header className="relative z-10 flex items-center justify-between">
-          <div>
-            <h1 className="text-white text-3xl font-bold mb-2">欢迎使用行程助手</h1>
-            <p className="text-white/70 text-sm">规划您的下一次完美旅程</p>
-          </div>
-          <div className="relative">
-            <button
-              onClick={() => setIsExportMenu(!isExportMenu)}
-              className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-            >
-              <Share2 size={24} />
-            </button>
+        <header className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-white text-2xl font-bold mb-1">欢迎使用行程助手</h1>
+              <p className="text-white/70 text-xs">规划您的下一次完美旅程</p>
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setIsExportMenu(!isExportMenu)}
+                className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              >
+                <Share2 size={20} />
+              </button>
 
-            <AnimatePresence>
-              {isExportMenu && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => setIsExportMenu(false)}
-                    className="fixed inset-0 z-40"
-                  />
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl overflow-hidden z-50"
-                  >
-                    <button
-                      onClick={handleExportAll}
-                      className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left"
+              <AnimatePresence>
+                {isExportMenu && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setIsExportMenu(false)}
+                      className="fixed inset-0 z-40"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      className="absolute top-full right-0 mt-2 w-52 bg-white rounded-2xl shadow-2xl overflow-hidden z-50"
                     >
-                      <Download size={18} className="text-primary" />
-                      <span className="text-sm font-medium text-gray-700">导出所有数据</span>
-                    </button>
-                    <button
-                      onClick={handleImport}
-                      disabled={isImporting}
-                      className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left border-t border-gray-100 disabled:opacity-50"
-                    >
-                      <Upload size={18} className="text-accent" />
-                      <span className="text-sm font-medium text-gray-700">
-                        {isImporting ? '导入中...' : '导入行程'}
-                      </span>
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+                      <button
+                        onClick={handleExportAll}
+                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <Download size={18} className="text-primary" />
+                        <span className="text-sm font-medium text-gray-700">导出所有数据</span>
+                      </button>
+                      <button
+                        onClick={handleImport}
+                        disabled={isImporting}
+                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left border-t border-gray-100 disabled:opacity-50"
+                      >
+                        <Upload size={18} className="text-accent" />
+                        <span className="text-sm font-medium text-gray-700">
+                          {isImporting ? '导入中...' : '导入行程'}
+                        </span>
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </header>
       </div>
